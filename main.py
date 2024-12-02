@@ -167,3 +167,39 @@ with open(output_file, 'w', encoding='utf-8') as f:
     json.dump(tfidf_data, f, ensure_ascii=False, indent=4)
 
 print(f"Matrice TF-IDF sauvegardée sous forme JSON dans : {output_file}")
+
+
+from sklearn.cluster import KMeans
+import json
+
+# Charger les données TF-IDF
+input_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\tfidf_reviews.json"
+with open(input_file, 'r', encoding='utf-8') as f:
+    tfidf_data = json.load(f)
+
+# Préparer la matrice TF-IDF pour KMeans
+documents = [doc["document"] for doc in tfidf_data]
+tfidf_matrix = [
+    [value for value in doc["tfidf_scores"].values()]  # Convertir les scores en vecteurs
+    for doc in tfidf_data
+]
+
+# Définir le nombre de clusters
+num_clusters = 5
+
+# Appliquer KMeans
+kmeans = KMeans(n_clusters=num_clusters, random_state=42)
+labels = kmeans.fit_predict(tfidf_matrix)
+
+# Ajouter les labels de clusters aux documents
+for i, doc in enumerate(tfidf_data):
+    doc["cluster"] = int(labels[i])
+
+# Chemin pour sauvegarder les résultats
+output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\clustered_reviews.json"
+
+# Sauvegarder les documents avec leurs clusters
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump(tfidf_data, f, ensure_ascii=False, indent=4)
+
+print(f"Documents regroupés en clusters sauvegardés dans : {output_file}")
