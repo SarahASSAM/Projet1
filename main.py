@@ -169,37 +169,32 @@ with open(output_file, 'w', encoding='utf-8') as f:
 print(f"Matrice TF-IDF sauvegardée sous forme JSON dans : {output_file}")
 
 
-from sklearn.cluster import KMeans
-import json
 
-# Charger les données TF-IDF
-input_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\tfidf_reviews.json"
-with open(input_file, 'r', encoding='utf-8') as f:
-    tfidf_data = json.load(f)
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-# Préparer la matrice TF-IDF pour KMeans
-documents = [doc["document"] for doc in tfidf_data]
-tfidf_matrix = [
-    [value for value in doc["tfidf_scores"].values()]  # Convertir les scores en vecteurs
-    for doc in tfidf_data
-]
+# Initialiser le vectoriseur TF-IDF
+vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')  # Limiter à 1000 mots les plus fréquents
 
-# Définir le nombre de clusters
-num_clusters = 5
+# Générer la matrice TF-IDF sous forme sparse
+tfidf_sparse_matrix = vectorizer.fit_transform(documents)
 
-# Appliquer KMeans
-kmeans = KMeans(n_clusters=num_clusters, random_state=42)
-labels = kmeans.fit_predict(tfidf_matrix)
+# Afficher des informations sur la matrice sparse
+print("Matrice TF-IDF (sparse) :")
+print(tfidf_sparse_matrix)
 
-# Ajouter les labels de clusters aux documents
-for i, doc in enumerate(tfidf_data):
-    doc["cluster"] = int(labels[i])
+# Dimensions de la matrice TF-IDF
+print(f"Dimensions de la matrice sparse TF-IDF : {tfidf_sparse_matrix.shape}")
 
-# Chemin pour sauvegarder les résultats
-output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\clustered_reviews.json"
+# Afficher un échantillon des données sparse
+print("Aperçu des données non nulles dans la matrice sparse TF-IDF :")
+print(tfidf_sparse_matrix[:3, :])  # Affiche les 3 premières lignes
 
-# Sauvegarder les documents avec leurs clusters
-with open(output_file, 'w', encoding='utf-8') as f:
-    json.dump(tfidf_data, f, ensure_ascii=False, indent=4)
+# Sauvegarder la matrice sparse dans un fichier
+from scipy.sparse import save_npz
 
-print(f"Documents regroupés en clusters sauvegardés dans : {output_file}")
+sparse_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\tfidf_sparse_matrix.npz"
+
+# Sauvegarder au format .npz
+save_npz(sparse_output_file, tfidf_sparse_matrix)
+
+print(f"Matrice TF-IDF sparse sauvegardée dans : {sparse_output_file}")
