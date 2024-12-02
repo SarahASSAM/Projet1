@@ -89,3 +89,29 @@ with open(final_output_file, 'w', encoding='utf-8') as f:
     json.dump(prepared_data, f, ensure_ascii=False, indent=4)
 
 print(f"Données nettoyées sauvegardées dans : {final_output_file}")
+
+
+# Chemin vers le fichier JSON
+input_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\prepared_reviews.json"
+
+# Charger les données prétraitées
+with open(input_file, 'r', encoding='utf-8') as f:
+    data = json.load(f)
+
+# Extraire les tokens nettoyés
+documents = [" ".join(doc['cleaned']) for doc in data]
+
+# Afficher un aperçu des documents
+print("Exemple de documents :")
+print(documents[:3])
+
+from sentence_transformers import SentenceTransformer
+
+# Charger un modèle pré-entraîné
+model = SentenceTransformer('all-MiniLM-L6-v2')  # Autres options : all-MiniLM-L12-v2, bert-base-uncased
+
+# Générer les embeddings pour chaque document
+embeddings = model.encode(documents)
+
+# Afficher la forme des embeddings (nombre de documents, taille des vecteurs)
+print(f"Shape des embeddings : {len(embeddings)}, {len(embeddings[0])}")
