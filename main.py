@@ -77,3 +77,15 @@ df_reviews['cleaned'] = df_reviews['filtered'].apply(clean_tokens)
 # Afficher un aperçu des données après nettoyage
 print("Exemple après nettoyage :")
 print(df_reviews[['filtered', 'cleaned']].head())
+
+# Sauvegarder les données nettoyées dans un fichier JSON
+prepared_data = df_reviews[['document', 'cleaned']].to_dict(orient='records')
+
+# Chemin de sauvegarde pour les données nettoyées
+final_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\prepared_reviews.json"
+
+# Sauvegarder en JSON
+with open(final_output_file, 'w', encoding='utf-8') as f:
+    json.dump(prepared_data, f, ensure_ascii=False, indent=4)
+
+print(f"Données nettoyées sauvegardées dans : {final_output_file}")
