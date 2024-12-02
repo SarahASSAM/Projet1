@@ -331,3 +331,14 @@ plt.ylabel("Composante principale 2", fontsize=14)
 plt.legend()
 plt.grid(alpha=0.3)
 plt.show()
+
+
+# Associer les documents à leurs clusters
+clustered_documents = df_reviews.groupby('cluster')['document'].apply(list).to_dict()
+
+# Afficher un exemple des documents regroupés par cluster
+for cluster, docs in clustered_documents.items():
+    print(f"Cluster {cluster} : {len(docs)} documents")
+    print(f"Exemple de documents dans le cluster {cluster} :")
+    print(docs[:3])  # Afficher seulement les 3 premiers documents
+    print("\n")
