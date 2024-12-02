@@ -108,10 +108,31 @@ print(documents[:3])
 from sentence_transformers import SentenceTransformer
 
 # Charger un modèle pré-entraîné
-model = SentenceTransformer('all-MiniLM-L6-v2')  # Autres options : all-MiniLM-L12-v2, bert-base-uncased
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Générer les embeddings pour chaque document
+# Générer les embeddings pour chaque document nettoyé
 embeddings = model.encode(documents)
 
-# Afficher la forme des embeddings (nombre de documents, taille des vecteurs)
+# Afficher la forme des embeddings
 print(f"Shape des embeddings : {len(embeddings)}, {len(embeddings[0])}")
+
+# Exemple d'un embedding
+print("Exemple d'embedding (vecteur) :", embeddings[0])
+
+# Afficher les 3 premiers vecteurs
+print("Les trois premiers embeddings :")
+for i in range(3):
+    print(f"Embedding {i + 1} : {embeddings[i]}")
+
+# Sauvegarder les embeddings avec leurs documents
+embeddings_data = [{"document": documents[i], "embedding": embeddings[i].tolist()} for i in range(len(embeddings))]
+
+# Chemin de sauvegarde
+embeddings_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\embeddings.json"
+
+# Écrire dans un fichier JSON
+with open(embeddings_file, 'w', encoding='utf-8') as f:
+    json.dump(embeddings_data, f, ensure_ascii=False, indent=4)
+
+print(f"Embeddings sauvegardés dans : {embeddings_file}")
+
