@@ -136,3 +136,34 @@ with open(embeddings_file, 'w', encoding='utf-8') as f:
 
 print(f"Embeddings sauvegardés dans : {embeddings_file}")
 
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Initialiser le vectoriseur TF-IDF
+vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')  # Limiter à 1000 mots les plus fréquents
+
+# Générer la matrice TF-IDF
+tfidf_matrix = vectorizer.fit_transform(documents)
+
+# Extraire les termes (mots) associés aux colonnes de la matrice
+terms = vectorizer.get_feature_names_out()
+
+# Convertir la matrice sparse en format dense
+dense_tfidf = tfidf_matrix.todense()
+
+# Convertir en liste de dictionnaires
+tfidf_data = []
+for i, doc in enumerate(dense_tfidf):
+    tfidf_data.append({
+        "document": documents[i],
+        "tfidf_scores": {terms[j]: doc[0, j] for j in range(len(terms)) if doc[0, j] > 0}  # Enregistrer uniquement les scores non nuls
+    })
+
+# Chemin pour sauvegarder le fichier JSON
+output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\tfidf_reviews.json"
+
+# Sauvegarder en JSON
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump(tfidf_data, f, ensure_ascii=False, indent=4)
+
+print(f"Matrice TF-IDF sauvegardée sous forme JSON dans : {output_file}")
