@@ -2,7 +2,7 @@ import jsonlines
 import pandas as pd
 import spacy
 import json
-
+import re
 # Charger les données
 reviews_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\reviews.jsonl"
 
@@ -54,3 +54,26 @@ df_reviews['lemmas'] = df_reviews['document'].apply(lemmatize_text)
 # Afficher un aperçu des lemmes générés
 print("Exemple de lemmatisation :")
 print(df_reviews[['document', 'lemmas']].head())
+# Fonction pour supprimer les stop words
+def remove_stop_words(tokens):
+    return [token for token in tokens if not nlp.vocab[token].is_stop]
+
+# Appliquer la suppression des stop words sur la liste des lemmes
+df_reviews['filtered'] = df_reviews['lemmas'].apply(remove_stop_words)
+
+# Afficher un aperçu des données après suppression des stop words
+print("Exemple après suppression des stop words :")
+print(df_reviews[['lemmas', 'filtered']].head())
+# Fonction pour exclure les éléments non pertinents
+def clean_tokens(tokens):
+    return [
+        token for token in tokens
+        if token.isalpha()  # Garde uniquement les mots (exclut les chiffres et la ponctuation)
+        and not re.match(r'^www\.|https?://', token)  # Exclut les URLs
+        ]
+# Appliquer le nettoyage sur les tokens filtrés
+df_reviews['cleaned'] = df_reviews['filtered'].apply(clean_tokens)
+
+# Afficher un aperçu des données après nettoyage
+print("Exemple après nettoyage :")
+print(df_reviews[['filtered', 'cleaned']].head())
