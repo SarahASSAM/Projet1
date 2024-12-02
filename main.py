@@ -198,3 +198,46 @@ sparse_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\tfidf_sparse_ma
 save_npz(sparse_output_file, tfidf_sparse_matrix)
 
 print(f"Matrice TF-IDF sparse sauvegardée dans : {sparse_output_file}")
+
+
+
+
+
+from sklearn.cluster import DBSCAN
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
+# Calculer une matrice de similarité cosinus à partir de la matrice TF-IDF sparse
+cosine_sim_matrix = cosine_similarity(tfidf_sparse_matrix)
+
+# Convertir la similarité cosinus en matrice de distances
+distance_matrix = 1 - cosine_sim_matrix
+
+# Corriger les éventuelles valeurs négatives dues à des erreurs d'arrondi
+distance_matrix = np.clip(distance_matrix, 0, None)
+
+# Définir l'algorithme DBSCAN avec une distance epsilon (paramètre à ajuster selon les données)
+dbscan = DBSCAN(eps=0.5, min_samples=5, metric='precomputed')
+
+# Appliquer DBSCAN sur la matrice de distances
+clusters = dbscan.fit_predict(distance_matrix)
+
+# Ajouter les étiquettes de cluster dans le DataFrame
+df_reviews['cluster'] = clusters
+
+# Afficher un aperçu des clusters générés
+print("Aperçu des clusters générés :")
+print(df_reviews[['document', 'cluster']].head(10))
+
+# Vérifier le nombre de clusters trouvés
+num_clusters = len(set(clusters)) - (1 if -1 in clusters else 0)  # -1 représente les points "bruit" non assignés
+print(f"Nombre de clusters identifiés (hors bruit) : {num_clusters}")
+
+# Sauvegarder les résultats dans un fichier JSON
+clustering_results = df_reviews[['document', 'cluster']].to_dict(orient='records')
+clustering_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\clustering_results.json"
+
+with open(clustering_output_file, 'w', encoding='utf-8') as f:
+    json.dump(clustering_results, f, ensure_ascii=False, indent=4)
+
+print(f"Résultats de clustering sauvegardés dans : {clustering_output_file}")
