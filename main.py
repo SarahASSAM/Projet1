@@ -1,6 +1,7 @@
 import jsonlines
 import pandas as pd
 import spacy
+import json
 
 # Charger les données
 reviews_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\reviews.jsonl"
@@ -31,6 +32,14 @@ def tokenize_text(text):
 # Appliquer la tokenisation à chaque document
 df_reviews['tokens'] = df_reviews['document'].apply(tokenize_text)
 
-# Afficher les résultats
-print("Exemple de tokenisation :")
-print(df_reviews[['document', 'tokens']].head())
+# Convertir le DataFrame en format JSON pour sauvegarde
+tokenized_data = df_reviews[['document', 'tokens']].to_dict(orient='records')
+
+# Chemin de sauvegarde
+output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\tokenized_reviews.json"
+
+# Sauvegarder en JSON
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump(tokenized_data, f, ensure_ascii=False, indent=4)
+
+print(f"Tokens sauvegardés dans : {output_file}")
