@@ -241,3 +241,93 @@ with open(clustering_output_file, 'w', encoding='utf-8') as f:
     json.dump(clustering_results, f, ensure_ascii=False, indent=4)
 
 print(f"Résultats de clustering sauvegardés dans : {clustering_output_file}")
+
+
+
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+import numpy as np
+
+# Réduction de dimensionnalité avec t-SNE (ou PCA comme alternative)
+tsne = TSNE(n_components=2, random_state=42)
+reduced_data = tsne.fit_transform(tfidf_sparse_matrix.toarray())  # Conversion en dense pour t-SNE
+
+# Récupérer les clusters pour chaque point
+clusters = df_reviews['cluster'].values
+
+# Créer un scatter plot
+plt.figure(figsize=(12, 8))
+unique_clusters = set(clusters)
+
+# Associer une couleur à chaque cluster
+for cluster in unique_clusters:
+    if cluster == -1:  # Points considérés comme "bruit" par DBSCAN
+        color = 'black'
+        label = 'Bruit'
+    else:
+        color = None  # Utiliser des couleurs automatiques pour les clusters
+        label = f'Cluster {cluster}'
+    
+    # Filtrer les points appartenant au cluster
+    cluster_points = reduced_data[clusters == cluster]
+    plt.scatter(
+        cluster_points[:, 0],
+        cluster_points[:, 1],
+        label=label,
+        alpha=0.6  # Transparence pour visualisation plus claire
+    )
+
+# Ajout des légendes et titres
+plt.title("Représentation des clusters DBSCAN (t-SNE)", fontsize=16)
+plt.xlabel("Dimension 1", fontsize=14)
+plt.ylabel("Dimension 2", fontsize=14)
+plt.legend()
+plt.show()
+
+
+
+
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Réduction de dimension avec PCA
+pca = PCA(n_components=2)
+pca_data = pca.fit_transform(tfidf_sparse_matrix.toarray())  # Conversion sparse -> dense pour PCA
+
+# Récupérer les clusters pour chaque point
+clusters = df_reviews['cluster'].values
+
+# Préparer le graphique
+plt.figure(figsize=(12, 8))
+
+# Créer un scatter plot avec des couleurs pour chaque cluster
+unique_clusters = set(clusters)
+colors = plt.cm.get_cmap("tab10", len(unique_clusters))  # Générer des couleurs pour les clusters
+
+for cluster in unique_clusters:
+    if cluster == -1:
+        label = "Bruit"  # Points non assignés
+        color = "black"
+    else:
+        label = f"Cluster {cluster}"
+        color = colors(cluster)
+    
+    # Filtrer les points pour ce cluster
+    cluster_points = pca_data[clusters == cluster]
+    plt.scatter(
+        cluster_points[:, 0],
+        cluster_points[:, 1],
+        label=label,
+        color=color,
+        alpha=0.6
+    )
+
+# Ajouter des légendes et personnaliser
+plt.title("Clustering DBSCAN avec PCA (Projection 2D)", fontsize=16)
+plt.xlabel("Composante principale 1", fontsize=14)
+plt.ylabel("Composante principale 2", fontsize=14)
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
