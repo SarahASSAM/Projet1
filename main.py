@@ -43,3 +43,14 @@ with open(output_file, 'w', encoding='utf-8') as f:
     json.dump(tokenized_data, f, ensure_ascii=False, indent=4)
 
 print(f"Tokens sauvegardés dans : {output_file}")
+
+# Fonction pour effectuer la lemmatisation
+def lemmatize_text(text):
+    doc = nlp(text)  # Processus NLP avec SpaCy
+    return [token.lemma_ for token in doc]  # Liste des lemmes
+# Appliquer la lemmatisation sur chaque document
+df_reviews['lemmas'] = df_reviews['document'].apply(lemmatize_text)
+
+# Afficher un aperçu des lemmes générés
+print("Exemple de lemmatisation :")
+print(df_reviews[['document', 'lemmas']].head())
