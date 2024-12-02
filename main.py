@@ -19,3 +19,4 @@ df = df[['title', 'text']]
 # Vérifier les premières lignes
 print("Aperçu des données :")
 print(df.head())
+print("test")
