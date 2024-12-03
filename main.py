@@ -369,8 +369,6 @@ for cluster, top_words in top_words_per_cluster.items():
         print(f"  {word} : {freq}")
     print("\n")
 
-
-
 # Fonction pour extraire les entités nommées (NER)
 def extract_entities(documents):
     entities = []
