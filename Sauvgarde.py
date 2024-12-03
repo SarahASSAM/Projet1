@@ -4,7 +4,7 @@ import spacy
 import json
 import re
 # Charger les données
-reviews_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\reviews.jsonl"
+reviews_file = "reviews.jsonl"
 
 # Charger les avis clients
 reviews = []
@@ -36,7 +36,7 @@ df_reviews['tokens'] = df_reviews['document'].apply(tokenize_text)
 tokenized_data = df_reviews[['document', 'tokens']].to_dict(orient='records')
 
 # Chemin de sauvegarde
-output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\tokenized_reviews.json"
+output_file = "tokenized_reviews.json"
 
 # Sauvegarder en JSON
 with open(output_file, 'w', encoding='utf-8') as f:
@@ -82,7 +82,7 @@ print(df_reviews[['filtered', 'cleaned']].head())
 prepared_data = df_reviews[['document', 'cleaned']].to_dict(orient='records')
 
 # Chemin de sauvegarde pour les données nettoyées
-final_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\prepared_reviews.json"
+final_output_file = "prepared_reviews.json"
 
 # Sauvegarder en JSON
 with open(final_output_file, 'w', encoding='utf-8') as f:
@@ -92,7 +92,7 @@ print(f"Données nettoyées sauvegardées dans : {final_output_file}")
 
 
 # Chemin vers le fichier JSON
-input_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\prepared_reviews.json"
+input_file = "prepared_reviews.json"
 
 # Charger les données prétraitées
 with open(input_file, 'r', encoding='utf-8') as f:
@@ -128,7 +128,7 @@ for i in range(3):
 embeddings_data = [{"document": documents[i], "embedding": embeddings[i].tolist()} for i in range(len(embeddings))]
 
 # Chemin de sauvegarde
-embeddings_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\embeddings.json"
+embeddings_file = "embeddings.json"
 
 # Écrire dans un fichier JSON
 with open(embeddings_file, 'w', encoding='utf-8') as f:
@@ -160,7 +160,7 @@ for i, doc in enumerate(dense_tfidf):
     })
 
 # Chemin pour sauvegarder le fichier JSON
-output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\tfidf_reviews.json"
+output_file = "tfidf_reviews.json"
 
 # Sauvegarder en JSON
 with open(output_file, 'w', encoding='utf-8') as f:
@@ -192,7 +192,7 @@ print(tfidf_sparse_matrix[:3, :])  # Affiche les 3 premières lignes
 # Sauvegarder la matrice sparse dans un fichier
 from scipy.sparse import save_npz
 
-sparse_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\tfidf_sparse_matrix.npz"
+sparse_output_file = "tfidf_sparse_matrix.npz"
 
 # Sauvegarder au format .npz
 save_npz(sparse_output_file, tfidf_sparse_matrix)
@@ -235,7 +235,7 @@ print(f"Nombre de clusters identifiés (hors bruit) : {num_clusters}")
 
 # Sauvegarder les résultats dans un fichier JSON
 clustering_results = df_reviews[['document', 'cluster']].to_dict(orient='records')
-clustering_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\clustering_results.json"
+clustering_output_file = "clustering_results.json"
 
 with open(clustering_output_file, 'w', encoding='utf-8') as f:
     json.dump(clustering_results, f, ensure_ascii=False, indent=4)
@@ -342,3 +342,112 @@ for cluster, docs in clustered_documents.items():
     print(f"Exemple de documents dans le cluster {cluster} :")
     print(docs[:3])  # Afficher seulement les 3 premiers documents
     print("\n")
+
+from collections import Counter
+
+# Associer les tokens nettoyés aux clusters
+clustered_tokens = df_reviews.groupby('cluster')['cleaned'].apply(list).to_dict()
+
+# Calculer les fréquences de mots pour chaque cluster
+word_frequencies = {}
+for cluster, tokens_list in clustered_tokens.items():
+    # Unifier les tokens de tous les documents du cluster
+    all_tokens = [token for tokens in tokens_list for token in tokens]
+    # Calculer les fréquences des mots
+    word_frequencies[cluster] = Counter(all_tokens)
+
+# Identifier les 10 mots les plus fréquents pour chaque cluster
+top_words_per_cluster = {
+    cluster: word_freq.most_common(10)
+    for cluster, word_freq in word_frequencies.items()
+}
+
+# Afficher les résultats
+for cluster, top_words in top_words_per_cluster.items():
+    print(f"Cluster {cluster} :")
+    for word, freq in top_words:
+        print(f"  {word} : {freq}")
+    print("\n")
+
+# Fonction pour extraire les entités nommées (NER)
+def extract_entities(documents):
+    entities = []
+    for doc in nlp.pipe(documents):  # Traitement en lot pour accélérer
+        entities.extend([ent.text for ent in doc.ents])  # Extraire les entités
+    return entities
+
+# Associer les documents aux clusters
+clustered_documents = df_reviews.groupby('cluster')['document'].apply(list).to_dict()
+
+# Extraire les entités pour chaque cluster
+ner_per_cluster = {}
+for cluster, docs in clustered_documents.items():
+    ner_per_cluster[cluster] = Counter(extract_entities(docs)).most_common(10)
+
+# Afficher les entités nommées principales par cluster
+for cluster, top_ents in ner_per_cluster.items():
+    print(f"Cluster {cluster} (NER) :")
+    for entity, freq in top_ents:
+        print(f"  {entity} : {freq}")
+    print("\n")
+
+
+
+from sklearn.feature_extraction.text import CountVectorizer
+
+# Fonction pour générer des n-grams
+def generate_ngrams(documents, n=2):
+    vectorizer = CountVectorizer(ngram_range=(n, n), stop_words='english')
+    ngram_matrix = vectorizer.fit_transform(documents)
+    ngram_counts = ngram_matrix.sum(axis=0)
+    ngram_vocab = vectorizer.get_feature_names_out()
+    return Counter(dict(zip(ngram_vocab, ngram_counts.A1)))
+
+# Extraire les bigrams pour chaque cluster
+bigrams_per_cluster = {}
+for cluster, docs in clustered_documents.items():
+    bigrams_per_cluster[cluster] = generate_ngrams(docs, n=2).most_common(10)
+
+# Afficher les bigrams principaux par cluster
+for cluster, top_bigrams in bigrams_per_cluster.items():
+    print(f"Cluster {cluster} (Bigrams) :")
+    for bigram, freq in top_bigrams:
+        print(f"  {bigram} : {freq}")
+    print("\n")
+
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Préparer les documents et leur cluster pour TF-IDF
+documents_with_cluster = [
+    (" ".join(tokens), cluster) for cluster, tokens_list in clustered_tokens.items() for tokens in tokens_list
+]
+
+texts, labels = zip(*documents_with_cluster)
+
+# Initialiser un vectoriseur TF-IDF par classe
+tfidf_vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
+tfidf_matrix = tfidf_vectorizer.fit_transform(texts)
+
+# Obtenir les mots et scores TF-IDF pour chaque cluster
+tfidf_vocab = tfidf_vectorizer.get_feature_names_out()
+cluster_words = {}
+
+for cluster in set(labels):
+    cluster_indices = [i for i, lbl in enumerate(labels) if lbl == cluster]
+    cluster_tfidf = tfidf_matrix[cluster_indices].mean(axis=0).A1
+    cluster_words[cluster] = sorted(
+        zip(tfidf_vocab, cluster_tfidf),
+        key=lambda x: x[1],
+        reverse=True
+    )[:10]
+
+# Afficher les mots les plus pertinents pour chaque cluster
+for cluster, words in cluster_words.items():
+    print(f"Cluster {cluster} (TF-IDF) :")
+    for word, score in words:
+        print(f"  {word} : {score:.4f}")
+    print("\n")
+
+
+
