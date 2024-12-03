@@ -191,3 +191,25 @@ plt.show()
 # Sauvegarder les résultats
 reviews_df.to_csv("reviews_with_sentiments_comparison.csv", index=False)
 print("Les résultats ont été sauvegardés dans 'reviews_with_sentiments_comparison.csv'.")
+
+
+##########Comparer notes réelles et prédictions ########
+import matplotlib.pyplot as plt
+
+# Comparer les distributions des notes réelles et des prédictions pour le modèle BERT
+plt.figure(figsize=(10, 6))
+
+# Histogramme des notes réelles
+plt.hist(reviews_df["rating"], bins=5, alpha=0.6, label="Notes réelles", edgecolor="black", color="blue")
+
+# Histogramme des prédictions BERT
+plt.hist(reviews_df["predicted_rating_bert"], bins=5, alpha=0.6, label="Prédictions BERT", edgecolor="black", color="green")
+
+# Ajouter des labels et une légende
+plt.title("Comparaison des distributions des notes réelles et prédites (BERT)")
+plt.xlabel("Notes (1 à 5)")
+plt.ylabel("Fréquence")
+plt.legend(loc="upper left")
+
+# Afficher le graphique
+plt.show()
