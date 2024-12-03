@@ -448,3 +448,12 @@ for cluster, words in cluster_words.items():
     for word, score in words:
         print(f"  {word} : {score:.4f}")
     print("\n")
+
+
+
+# Vérifier la pertinence des mots-clés pour un cluster
+for cluster, docs in clustered_documents.items():
+    print(f"Cluster {cluster} - Exemple de documents :")
+    print(docs[:3])  # Afficher les 3 premiers documents
+    print(f"Mots dominants TF-IDF pour ce cluster : {cluster_words[cluster]}")
+    print("\n")
