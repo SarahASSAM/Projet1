@@ -414,3 +414,37 @@ for cluster, top_bigrams in bigrams_per_cluster.items():
     for bigram, freq in top_bigrams:
         print(f"  {bigram} : {freq}")
     print("\n")
+
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Préparer les documents et leur cluster pour TF-IDF
+documents_with_cluster = [
+    (" ".join(tokens), cluster) for cluster, tokens_list in clustered_tokens.items() for tokens in tokens_list
+]
+
+texts, labels = zip(*documents_with_cluster)
+
+# Initialiser un vectoriseur TF-IDF par classe
+tfidf_vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
+tfidf_matrix = tfidf_vectorizer.fit_transform(texts)
+
+# Obtenir les mots et scores TF-IDF pour chaque cluster
+tfidf_vocab = tfidf_vectorizer.get_feature_names_out()
+cluster_words = {}
+
+for cluster in set(labels):
+    cluster_indices = [i for i, lbl in enumerate(labels) if lbl == cluster]
+    cluster_tfidf = tfidf_matrix[cluster_indices].mean(axis=0).A1
+    cluster_words[cluster] = sorted(
+        zip(tfidf_vocab, cluster_tfidf),
+        key=lambda x: x[1],
+        reverse=True
+    )[:10]
+
+# Afficher les mots les plus pertinents pour chaque cluster
+for cluster, words in cluster_words.items():
+    print(f"Cluster {cluster} (TF-IDF) :")
+    for word, score in words:
+        print(f"  {word} : {score:.4f}")
+    print("\n")
