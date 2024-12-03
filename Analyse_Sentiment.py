@@ -1,7 +1,11 @@
+
 import pandas as pd
 import json
+from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+import torch.nn.functional as F
+from scipy.stats import pearsonr
 
 # Chemin du fichier JSONL
 file_path = "reviews.jsonl"
@@ -21,38 +25,49 @@ texts = [review.get("text") for review in data]
 # Convertir en DataFrame
 reviews_df = pd.DataFrame({"rating": ratings, "text": texts})
 
-# Afficher un aperçu des données
-print("Aperçu des données chargées :")
-print(reviews_df.head())
-
-# Partie 2 : Chargement du modèle et analyse des sentiments
 # Charger le tokenizer et le modèle
 tokenizer = AutoTokenizer.from_pretrained("nlptown/bert-base-multilingual-uncased-sentiment")
 model = AutoModelForSequenceClassification.from_pretrained("nlptown/bert-base-multilingual-uncased-sentiment")
 
-# Fonction pour analyser les sentiments d'une liste de textes
-def analyze_sentiments(texts):
-    predictions = []
-    for text in texts:
-        # Préparer les entrées
-        inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
-        # Obtenir les prédictions
-        outputs = model(**inputs)
-        logits = outputs.logits
-        predicted_class = torch.argmax(logits, dim=1).item() + 1  # Les classes commencent à 1
-        predictions.append(predicted_class)
-    return predictions
+# Tokenisation et DataLoader
+batch_size = 16  # Ajustez selon vos ressources
+tokenized_data = tokenizer(
+    texts,
+    max_length=512,
+    padding="max_length",
+    truncation=True,
+    return_tensors="pt"
+)
 
-# Appliquer l'analyse des sentiments aux 200 avis
-predicted_ratings = analyze_sentiments(reviews_df["text"])
+# Préparer les données pour le DataLoader
+input_ids = tokenized_data["input_ids"]
+attention_masks = tokenized_data["attention_mask"]
+labels = torch.tensor(ratings)
+
+# Créer le DataLoader
+dataloader = DataLoader(
+    dataset=list(zip(input_ids, attention_masks, labels)),
+    batch_size=batch_size,
+    shuffle=False
+)
+
+
+# Analyse des sentiments
+predictions = []
+model.eval()  # Mode évaluation
+with torch.no_grad():  # Désactiver la rétropropagation pour économiser les ressources
+    for batch in dataloader:
+        batch_input_ids, batch_attention_masks, _ = batch
+        # Passage dans le modèle
+        outputs = model(input_ids=batch_input_ids, attention_mask=batch_attention_masks)
+        logits = outputs.logits
+
+        # Appliquer softmax pour obtenir les probabilités
+        probabilities = F.softmax(logits, dim=1)
+
+        # Trouver les classes avec les probabilités maximales
+        predicted_classes = torch.argmax(probabilities, dim=1) + 1  # Classes de 1 à 5
+        predictions.extend(predicted_classes.tolist())
 
 # Ajouter les prédictions au DataFrame
-reviews_df["predicted_rating"] = predicted_ratings
-
-# Afficher un aperçu des résultats
-print("Aperçu des résultats après analyse des sentiments :")
-print(reviews_df.head())
-
-# Sauvegarder les résultats dans un fichier CSV
-reviews_df.to_csv("reviews_with_sentiments.csv", index=False)
-print("Les résultats ont été sauvegardés dans 'reviews_with_sentiments.csv'.")
+reviews_df["predicted_rating"] = predictions
