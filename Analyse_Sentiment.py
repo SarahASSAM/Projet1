@@ -71,3 +71,18 @@ with torch.no_grad():  # Désactiver la rétropropagation pour économiser les r
 
 # Ajouter les prédictions au DataFrame
 reviews_df["predicted_rating"] = predictions
+
+# Évaluation des performances
+# Corrélation de Pearson entre les notes réelles et les prédictions
+real_ratings = reviews_df["rating"]
+predicted_ratings = reviews_df["predicted_rating"]
+correlation, _ = pearsonr(real_ratings, predicted_ratings)
+
+# Afficher les résultats
+print("Corrélation de Pearson entre les notes réelles et prédites :", correlation)
+print("Aperçu des résultats avec prédictions :")
+print(reviews_df.head())
+
+# Sauvegarder les résultats dans un fichier CSV
+reviews_df.to_csv("reviews_with_sentiments_and_correlation.csv", index=False)
+print("Les résultats ont été sauvegardés dans 'reviews_with_sentiments_and_correlation.csv'.")
