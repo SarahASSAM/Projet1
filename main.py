@@ -368,3 +368,30 @@ for cluster, top_words in top_words_per_cluster.items():
     for word, freq in top_words:
         print(f"  {word} : {freq}")
     print("\n")
+
+
+
+# Fonction pour extraire les entités nommées (NER)
+def extract_entities(documents):
+    entities = []
+    for doc in nlp.pipe(documents):  # Traitement en lot pour accélérer
+        entities.extend([ent.text for ent in doc.ents])  # Extraire les entités
+    return entities
+
+# Associer les documents aux clusters
+clustered_documents = df_reviews.groupby('cluster')['document'].apply(list).to_dict()
+
+# Extraire les entités pour chaque cluster
+ner_per_cluster = {}
+for cluster, docs in clustered_documents.items():
+    ner_per_cluster[cluster] = Counter(extract_entities(docs)).most_common(10)
+
+# Afficher les entités nommées principales par cluster
+for cluster, top_ents in ner_per_cluster.items():
+    print(f"Cluster {cluster} (NER) :")
+    for entity, freq in top_ents:
+        print(f"  {entity} : {freq}")
+    print("\n")
+
+
+
