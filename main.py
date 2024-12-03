@@ -448,3 +448,21 @@ for cluster, words in cluster_words.items():
     for word, score in words:
         print(f"  {word} : {score:.4f}")
     print("\n")
+
+################CALCULER SILOUETTE SCORE##########@@@@@
+
+from sklearn.metrics import silhouette_score
+import numpy as np
+
+# Exclure les points bruit (-1) dans `df_reviews['cluster']`
+valid_indices = df_reviews['cluster'] != -1
+valid_clusters = df_reviews.loc[valid_indices, 'cluster'].values
+valid_matrix = tfidf_sparse_matrix[valid_indices]  # Matrice TF-IDF pour les points valides
+
+# Vérifier qu'il y a au moins 2 clusters pour calculer le Silhouette Score
+if len(set(valid_clusters)) > 1:
+    # Calcul du Silhouette Score en utilisant la distance cosinus
+    score = silhouette_score(valid_matrix, valid_clusters, metric='cosine')
+    print(f"Silhouette Score : {score:.4f}")
+else:
+    print("Le Silhouette Score ne peut pas être calculé avec un seul cluster ou des points bruit uniquement.")
