@@ -393,3 +393,24 @@ for cluster, top_ents in ner_per_cluster.items():
 
 
 
+from sklearn.feature_extraction.text import CountVectorizer
+
+# Fonction pour générer des n-grams
+def generate_ngrams(documents, n=2):
+    vectorizer = CountVectorizer(ngram_range=(n, n), stop_words='english')
+    ngram_matrix = vectorizer.fit_transform(documents)
+    ngram_counts = ngram_matrix.sum(axis=0)
+    ngram_vocab = vectorizer.get_feature_names_out()
+    return Counter(dict(zip(ngram_vocab, ngram_counts.A1)))
+
+# Extraire les bigrams pour chaque cluster
+bigrams_per_cluster = {}
+for cluster, docs in clustered_documents.items():
+    bigrams_per_cluster[cluster] = generate_ngrams(docs, n=2).most_common(10)
+
+# Afficher les bigrams principaux par cluster
+for cluster, top_bigrams in bigrams_per_cluster.items():
+    print(f"Cluster {cluster} (Bigrams) :")
+    for bigram, freq in top_bigrams:
+        print(f"  {bigram} : {freq}")
+    print("\n")
