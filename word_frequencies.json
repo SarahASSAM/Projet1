@@ -1,0 +1,70 @@
+{
+    "-1": {
+        "phone": 738,
+        "case": 604,
+        "use": 294,
+        "work": 293,
+        "great": 291,
+        "good": 234,
+        "like": 207,
+        "fit": 206,
+        "charge": 204,
+        "love": 176
+    },
+    "0": {
+        "great": 103,
+        "case": 101,
+        "phone": 91,
+        "love": 51,
+        "good": 47,
+        "work": 41,
+        "fit": 38,
+        "screen": 37,
+        "nice": 31,
+        "protector": 28
+    },
+    "1": {
+        "band": 36,
+        "watch": 11,
+        "great": 9,
+        "easy": 8,
+        "love": 6,
+        "fit": 5,
+        "look": 5,
+        "good": 4,
+        "replacement": 4,
+        "apple": 4
+    },
+    "2": {
+        "review": 59,
+        "like": 22,
+        "update": 21,
+        "long": 21,
+        "time": 21,
+        "info": 20,
+        "experience": 20,
+        "rank": 20,
+        "reviewer": 20,
+        "use": 16
+    },
+    "3": {
+        "star": 4,
+        "great": 3,
+        "adorable": 1,
+        "case": 1,
+        "light": 1,
+        "protect": 1
+    },
+    "4": {
+        "gift": 6,
+        "love": 4,
+        "purchase": 2,
+        "cute": 2,
+        "nice": 1,
+        "place": 1,
+        "card": 1,
+        "like": 1,
+        "especially": 1,
+        "hat": 1
+    }
+}

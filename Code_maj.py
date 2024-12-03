@@ -9,6 +9,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score
 from collections import Counter
 import numpy as np
 import matplotlib.pyplot as plt
@@ -65,9 +66,20 @@ dbscan = DBSCAN(eps=0.5, min_samples=5, metric='precomputed')
 clusters = dbscan.fit_predict(distance_matrix)
 df_reviews['cluster'] = clusters
 
-
 # Vérification des clusters générés
 print("Clusters identifiés :", np.unique(clusters))
+
+# Filtrer les points de bruit (labels -1) pour le Silhouette Score
+valid_indices = clusters != -1
+valid_data = tfidf_sparse_matrix[valid_indices]
+valid_clusters = clusters[valid_indices]
+
+# Calcul du Silhouette Score
+if len(set(valid_clusters)) > 1:  # Nécessite au moins deux clusters valides
+    score = silhouette_score(valid_data, valid_clusters, metric="cosine")
+    print(f"Silhouette Score (sans points de bruit) : {score:.4f}")
+else:
+    print("Impossible de calculer le Silhouette Score : il n'y a qu'un seul cluster ou aucun cluster valide.")
 
 # Analyse des clusters
 clustered_documents = df_reviews.groupby('cluster')['cleaned'].apply(list).to_dict()
@@ -101,26 +113,6 @@ for cluster, words in cluster_words.items():
         print(f"  {word} : {score:.4f}")
     print("\n")
 
-<<<<<<< HEAD
-
-####################### Évaluation des clusters ###########################@ :
-
-from sklearn.metrics import silhouette_score
-import numpy as np
-
-# Exclure les points bruit (-1) dans `df_reviews['cluster']`
-valid_indices = df_reviews['cluster'] != -1
-valid_clusters = df_reviews.loc[valid_indices, 'cluster'].values
-valid_matrix = tfidf_sparse_matrix[valid_indices]  # Matrice TF-IDF pour les points valides
-
-# Vérifier qu'il y a au moins 2 clusters pour calculer le Silhouette Score
-if len(set(valid_clusters)) > 1:
-    # Calcul du Silhouette Score en utilisant la distance cosinus
-    score = silhouette_score(valid_matrix, valid_clusters, metric='cosine')
-    print(f"Silhouette Score : {score:.4f}")
-else:
-    print("Le Silhouette Score ne peut pas être calculé avec un seul cluster ou des points bruit uniquement.")
-=======
 # Extraction des n-grams
 def generate_ngrams(documents, n=2):
     vectorizer = CountVectorizer(ngram_range=(n, n), stop_words='english')
@@ -164,38 +156,3 @@ for cluster in set(clusters):
 plt.title("Clusters DBSCAN avec PCA (Projection 2D)")
 plt.legend()
 plt.show()
-
-# Sauvegarder les clusters avec documents associés
-final_clusters = df_reviews.groupby('cluster')['document'].apply(list).to_dict()
-with open("clusters_with_documents.json", 'w', encoding='utf-8') as f:
-    json.dump(final_clusters, f, ensure_ascii=False, indent=4)
-
-# Extraction des entités nommées (NER)
-def extract_entities(documents):
-    # Convertir les documents en chaînes de caractères si nécessaire
-    documents = [" ".join(doc) if isinstance(doc, list) else doc for doc in documents]
-    entities = []
-    for doc in nlp.pipe(documents, batch_size=50):  # Traitement en lot pour accélérer
-        entities.extend([ent.text for ent in doc.ents])
-    return entities
-
-ner_per_cluster = {
-    cluster: Counter(extract_entities(docs)).most_common(10)
-    for cluster, docs in clustered_documents.items()
-}
-
-# Sauvegarder les entités nommées pour chaque cluster
-with open("ner_per_cluster.json", 'w', encoding='utf-8') as f:
-    json.dump(ner_per_cluster, f, ensure_ascii=False, indent=4)
-
-# Sauvegarder les fréquences des mots pour chaque cluster
-word_frequencies = {
-    cluster: Counter([token for tokens in tokens_list for token in tokens])
-    for cluster, tokens_list in clustered_documents.items()
-}
-with open("word_frequencies.json", 'w', encoding='utf-8') as f:
-    json.dump(
-        {cluster: dict(freq.most_common(10)) for cluster, freq in word_frequencies.items()},
-        f, ensure_ascii=False, indent=4
-    )
->>>>>>> d64cdc7ad710872040d92af2725441f2906fa757
