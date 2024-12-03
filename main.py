@@ -342,3 +342,29 @@ for cluster, docs in clustered_documents.items():
     print(f"Exemple de documents dans le cluster {cluster} :")
     print(docs[:3])  # Afficher seulement les 3 premiers documents
     print("\n")
+
+from collections import Counter
+
+# Associer les tokens nettoyés aux clusters
+clustered_tokens = df_reviews.groupby('cluster')['cleaned'].apply(list).to_dict()
+
+# Calculer les fréquences de mots pour chaque cluster
+word_frequencies = {}
+for cluster, tokens_list in clustered_tokens.items():
+    # Unifier les tokens de tous les documents du cluster
+    all_tokens = [token for tokens in tokens_list for token in tokens]
+    # Calculer les fréquences des mots
+    word_frequencies[cluster] = Counter(all_tokens)
+
+# Identifier les 10 mots les plus fréquents pour chaque cluster
+top_words_per_cluster = {
+    cluster: word_freq.most_common(10)
+    for cluster, word_freq in word_frequencies.items()
+}
+
+# Afficher les résultats
+for cluster, top_words in top_words_per_cluster.items():
+    print(f"Cluster {cluster} :")
+    for word, freq in top_words:
+        print(f"  {word} : {freq}")
+    print("\n")
