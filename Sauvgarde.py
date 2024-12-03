@@ -4,7 +4,7 @@ import spacy
 import json
 import re
 # Charger les données
-reviews_file = "reviews.jsonl"
+reviews_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\reviews.jsonl"
 
 # Charger les avis clients
 reviews = []
@@ -36,7 +36,7 @@ df_reviews['tokens'] = df_reviews['document'].apply(tokenize_text)
 tokenized_data = df_reviews[['document', 'tokens']].to_dict(orient='records')
 
 # Chemin de sauvegarde
-output_file = "tokenized_reviews.json"
+output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\tokenized_reviews.json"
 
 # Sauvegarder en JSON
 with open(output_file, 'w', encoding='utf-8') as f:
@@ -82,7 +82,7 @@ print(df_reviews[['filtered', 'cleaned']].head())
 prepared_data = df_reviews[['document', 'cleaned']].to_dict(orient='records')
 
 # Chemin de sauvegarde pour les données nettoyées
-final_output_file = "prepared_reviews.json"
+final_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\prepared_reviews.json"
 
 # Sauvegarder en JSON
 with open(final_output_file, 'w', encoding='utf-8') as f:
@@ -92,7 +92,7 @@ print(f"Données nettoyées sauvegardées dans : {final_output_file}")
 
 
 # Chemin vers le fichier JSON
-input_file = "prepared_reviews.json"
+input_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\prepared_reviews.json"
 
 # Charger les données prétraitées
 with open(input_file, 'r', encoding='utf-8') as f:
@@ -128,7 +128,7 @@ for i in range(3):
 embeddings_data = [{"document": documents[i], "embedding": embeddings[i].tolist()} for i in range(len(embeddings))]
 
 # Chemin de sauvegarde
-embeddings_file = "embeddings.json"
+embeddings_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\embeddings.json"
 
 # Écrire dans un fichier JSON
 with open(embeddings_file, 'w', encoding='utf-8') as f:
@@ -160,7 +160,7 @@ for i, doc in enumerate(dense_tfidf):
     })
 
 # Chemin pour sauvegarder le fichier JSON
-output_file = "tfidf_reviews.json"
+output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\tfidf_reviews.json"
 
 # Sauvegarder en JSON
 with open(output_file, 'w', encoding='utf-8') as f:
@@ -192,7 +192,7 @@ print(tfidf_sparse_matrix[:3, :])  # Affiche les 3 premières lignes
 # Sauvegarder la matrice sparse dans un fichier
 from scipy.sparse import save_npz
 
-sparse_output_file = "tfidf_sparse_matrix.npz"
+sparse_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\tfidf_sparse_matrix.npz"
 
 # Sauvegarder au format .npz
 save_npz(sparse_output_file, tfidf_sparse_matrix)
@@ -235,7 +235,7 @@ print(f"Nombre de clusters identifiés (hors bruit) : {num_clusters}")
 
 # Sauvegarder les résultats dans un fichier JSON
 clustering_results = df_reviews[['document', 'cluster']].to_dict(orient='records')
-clustering_output_file = "clustering_results.json"
+clustering_output_file = r"C:\Users\sarah\Desktop\Cours M2\NLP & GEN\Projet1\clustering_results.json"
 
 with open(clustering_output_file, 'w', encoding='utf-8') as f:
     json.dump(clustering_results, f, ensure_ascii=False, indent=4)
