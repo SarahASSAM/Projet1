@@ -1,95 +1,107 @@
 import pandas as pd
-import json
-from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Chemin du fichier JSONL
-file_path = "reviews.jsonl"
+# ///// Charger les données
+# Charger et préparer les données
+data = pd.read_json("reviews.jsonl", lines=True)
+data['combined_text'] = data['title'] + " " + data['text']
+reviews = data[['rating', 'combined_text']].dropna()
 
-# Lire les 200 premières lignes
-data = []
-with open(file_path, "r", encoding="utf-8") as file:
-    for i, line in enumerate(file):
-        if i >= 200:  # Limiter à 200 avis
-            break
-        data.append(json.loads(line.strip()))  # Charger chaque ligne comme un objet JSON
+# Limiter les données pour les tests
+reviews = reviews.head(200)
 
-# Extraire les notes, les textes et les titres
-ratings = [review.get("rating") for review in data]
-texts = [review.get("text") for review in data]
-titles = [review.get("title", "") for review in data]  # "" si le titre est manquant
+# ///// Charger le modèle et tokenizer
+model_name = "nlptown/bert-base-multilingual-uncased-sentiment"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
-# Combiner les titres et les textes
-combined_texts = [f"{title}. {text}" if title else text for title, text in zip(titles, texts)]
+# Détecter le GPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
 
-# Convertir en DataFrame
-reviews_df = pd.DataFrame({"rating": ratings, "text": texts, "title": titles, "combined_text": combined_texts})
+# ///// Prétraitement et analyse des sentiments par lots
+# Créer une classe Dataset
+class ReviewDataset(Dataset):
+    def __init__(self, texts):
+        self.texts = texts
 
-# Charger le tokenizer et le modèle BERT précédent
-tokenizer_bert = AutoTokenizer.from_pretrained("nlptown/bert-base-multilingual-uncased-sentiment")
-model_bert = AutoModelForSequenceClassification.from_pretrained("nlptown/bert-base-multilingual-uncased-sentiment")
+    def __len__(self):
+        return len(self.texts)
 
-# Charger le tokenizer et le nouveau modèle
-tokenizer_roberta = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
-model_roberta = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+    def __getitem__(self, idx):
+        return self.texts[idx]
 
-# Fonction d'analyse des sentiments
-def analyze_sentiments(tokenizer, model, texts, batch_size=16):
-    # Tokenisation
-    tokenized_data = tokenizer(
-        texts,
-        max_length=512,
-        padding="max_length",
-        truncation=True,
-        return_tensors="pt"
-    )
-    input_ids = tokenized_data["input_ids"]
-    attention_mask = tokenized_data["attention_mask"]
-    
-    # Diviser en lots
-    dataloader = DataLoader(
-        dataset=list(zip(input_ids, attention_mask)),
-        batch_size=batch_size,
-        shuffle=False
-    )
-    
-    predictions = []
-    model.eval()  # Mode évaluation
+# Créer le DataLoader
+batch_size = 16
+dataset = ReviewDataset(reviews['combined_text'].tolist())
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+# Analyser les sentiments par lots
+all_predictions = []
+for batch in dataloader:
+    tokens = tokenizer(batch, return_tensors='pt', truncation=True, padding=True, max_length=512)
+    tokens = {key: val.to(device) for key, val in tokens.items()}
     with torch.no_grad():
-        for batch in dataloader:
-            batch_input_ids, batch_attention_masks = batch
-            outputs = model(input_ids=batch_input_ids, attention_mask=batch_attention_masks)
-            logits = outputs.logits
-            probabilities = F.softmax(logits, dim=1)
-            predicted_classes = torch.argmax(probabilities, dim=1)
-            predictions.extend(predicted_classes.tolist())
-    
-    return predictions
+        outputs = model(**tokens)
+        logits = outputs.logits
+        probabilities = torch.softmax(logits, dim=-1).cpu().numpy()
+        predictions = probabilities.argmax(axis=-1) + 1
+        all_predictions.extend(predictions)
 
-# Analyse avec le modèle BERT (notes de 1 à 5) sur combined_text
-predicted_ratings_bert = analyze_sentiments(tokenizer_bert, model_bert, reviews_df["combined_text"].tolist(), batch_size=16)
+# Ajouter les prédictions aux données
+reviews['predicted_rating'] = all_predictions
 
-# Analyse avec le modèle RoBERTa (convertir les classes en notes 1 à 5) sur combined_text
-predicted_ratings_roberta_raw = analyze_sentiments(tokenizer_roberta, model_roberta, reviews_df["combined_text"].tolist(), batch_size=16)
+# ///// Évaluation des performances
+# Calculer la corrélation de Pearson
+actual_ratings = reviews['rating']
+predicted_ratings = reviews['predicted_rating']
+correlation, _ = pearsonr(actual_ratings, predicted_ratings)
+print(f"Corrélation de Pearson : {correlation}")
 
-# Convertir les classes de RoBERTa (0: négatif, 1: neutre, 2: positif) en notes
-predicted_ratings_roberta = [1 if cls == 0 else 3 if cls == 1 else 5 for cls in predicted_ratings_roberta_raw]
+# Afficher les premières lignes avec les prédictions
+print(reviews[['rating', 'predicted_rating', 'combined_text']].head(10))
 
-# Ajouter les prédictions au DataFrame
-reviews_df["predicted_rating_bert"] = predicted_ratings_bert
-reviews_df["predicted_rating_roberta"] = predicted_ratings_roberta
+# ///// Visualisation des résultats
+# Matrice de corrélation
+plt.figure(figsize=(10, 8))
+correlation_matrix = reviews[['rating', 'predicted_rating']].corr()
+sns.heatmap(correlation_matrix, annot=True, cmap='Greens', fmt='.2f')
+plt.title("Corrélation entre les Notes Réelles et Prédites", fontsize=16)
+plt.xlabel("Variables", fontsize=14)
+plt.ylabel("Variables", fontsize=14)
+plt.tight_layout()
+plt.show()
 
-# Évaluation des performances
-correlation_bert, _ = pearsonr(reviews_df["rating"], reviews_df["predicted_rating_bert"])
-correlation_roberta, _ = pearsonr(reviews_df["rating"], reviews_df["predicted_rating_roberta"])
+# Matrice de confusion
+confusion_matrix = pd.crosstab(reviews['rating'], reviews['predicted_rating'], rownames=['Vraies Notes'], colnames=['Notes Prédites'], normalize=False)
+plt.figure(figsize=(10, 8))
+sns.heatmap(confusion_matrix, annot=True, fmt='d', cmap='Purples', cbar=False)
+plt.title("Matrice de Confusion : Vraies Notes vs Notes Prédites", fontsize=16)
+plt.xlabel("Notes Prédites", fontsize=14)
+plt.ylabel("Vraies Notes", fontsize=14)
+plt.tight_layout()
+plt.show()
 
-# Afficher les corrélations
-print(f"Corrélation pour le modèle BERT (avec titres) : {correlation_bert}")
-print(f"Corrélation pour le modèle RoBERTa (avec titres) : {correlation_roberta}")
+# Graphique des fréquences
+plt.figure(figsize=(12, 8))
+bar_width = 0.4
+ratings_counts = reviews['rating'].value_counts().sort_index()
+predicted_counts = reviews['predicted_rating'].value_counts().sort_index()
+x_real = [x - bar_width / 2 for x in ratings_counts.index]
+x_predicted = [x + bar_width / 2 for x in predicted_counts.index]
 
-
-
+plt.bar(x_real, ratings_counts, width=bar_width, label='Vraies Notes', alpha=0.8, color='teal')
+plt.bar(x_predicted, predicted_counts, width=bar_width, label='Notes Prédites', alpha=0.8, color='salmon')
+plt.xlabel('Notes (1 à 5)', fontsize=14)
+plt.ylabel('Fréquence', fontsize=14)
+plt.title('Comparaison des Fréquences : Vraies Notes vs Prédites', fontsize=16)
+plt.xticks([1, 2, 3, 4, 5], fontsize=12)
+plt.yticks(fontsize=12)
+plt.legend(fontsize=12)
+plt.tight_layout()
+plt.show()
